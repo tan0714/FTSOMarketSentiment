@@ -8,7 +8,6 @@ from langchain.agents import AgentExecutor, create_structured_chat_agent
 from langchain.schema import AIMessage, HumanMessage, SystemMessage
 from langgraph.prebuilt import create_react_agent
 
-
 # Optional: Attempt to import LangGraph for visualization support
 try:
     from langgraph import visualize_chain
@@ -25,13 +24,16 @@ def initialize_tweet_analyzer():
     """
     Initialize an AI agent using LangChain and LangGraph to analyze tweet content.
     The agent outputs a deletion likelihood score (0-1) based on controversy and provides
-    suggestions to adapt HTML extraction if needed.
+    suggestions for adapting HTML extraction if needed.
+    
+    NOTE: Please instruct the agent to output a plain string like:
+    "Score: 0.1. <analysis text>".
     """
     system_prompt = (
         "You are an AI tweet analyzer. Your job is to analyze the tweet content and output "
         "a likelihood score between 0 and 1 for the tweet being deleted based on its controversial nature. "
         "If the HTML structure is non-standard, include suggestions for adapting the extraction process. "
-        "Provide your answer as 'Score: <number>' followed by any analysis notes."
+        "Output your answer as a plain string beginning with 'Score:' followed by the numeric value and your analysis notes."
     )
     
     memory = ConversationBufferMemory(memory_key="chat_history", return_messages=True)
@@ -46,10 +48,10 @@ def initialize_tweet_analyzer():
         agent=agent,
         tools=[],  # No additional tools are used in this analysis
         verbose=True,
-        memory=memory
+        memory=memory,
+        handle_parsing_errors=True  # Enable handling of output parsing errors
     )
     
-    # Visualize the chain with LangGraph (if available)
     try:
         visualize_chain(agent)
     except Exception as e:
@@ -72,6 +74,12 @@ def analyze_tweet(tweet_content, agent_executor=None):
     response = agent_executor.invoke({"input": query})
     output_text = response.get("output", "")
     
+    # If the output is a dictionary, convert it to a plain string.
+    if isinstance(output_text, dict):
+        score = output_text.get("Score", 0.0)
+        analysis = output_text.get("Analysis notes", "")
+        output_text = f"Score: {score}. {analysis}"
+    
     # Naively parse the output to extract a score between 0 and 1.
     score = None
     for part in output_text.split():
@@ -80,9 +88,9 @@ def analyze_tweet(tweet_content, agent_executor=None):
             if 0 <= val <= 1:
                 score = val
                 break
-        except:
+        except Exception:
             continue
     if score is None:
-        score = 0.0  # Default fallback if no valid score is found
+        score = 0.0  # Fallback if no valid score is found
     
     return score, output_text
