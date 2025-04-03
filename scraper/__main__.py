@@ -4,14 +4,20 @@ import argparse
 import getpass
 from twitter_scraper import Twitter_Scraper
 
+import logging
+logging.basicConfig(level=logging.DEBUG, format='%(asctime)s [%(levelname)s] %(message)s')
+
 try:
     from dotenv import load_dotenv
 
     print("Loading .env file")
+    logging.info("Loading .env file")
     load_dotenv()
     print("Loaded .env file\n")
+    logging.info("Loaded .env file")
 except Exception as e:
     print(f"Error loading .env file: {e}")
+    logging.error(f"Error loading .env file: {e}")
     sys.exit(1)
 
 
@@ -53,14 +59,16 @@ def main():
             )
         except Exception as e:
             print(f"Error retrieving environment variables: {e}")
+            logging.error(f"Error retrieving environment variables: {e}")
             sys.exit(1)
 
+        # Default tweet count set to 5 for testing
         parser.add_argument(
             "-t",
             "--tweets",
             type=int,
-            default=10,
-            help="Number of tweets to scrape (default: 50)",
+            default=5,
+            help="Number of tweets to scrape (default: 5)",
         )
 
         parser.add_argument(
@@ -126,7 +134,7 @@ def main():
         USER_MAIL = args.mail
         USER_UNAME = args.user
         USER_PASSWORD = args.password
-        HEADLESS_MODE= args.headlessState
+        HEADLESS_MODE = args.headlessState
 
         if USER_UNAME is None:
             USER_UNAME = input("Twitter Username: ")
@@ -135,9 +143,11 @@ def main():
             USER_PASSWORD = getpass.getpass("Enter Password: ")
 
         if HEADLESS_MODE is None:
-            HEADLESS_MODE - str(input("Headless?[Yes/No]")).lower()
+            HEADLESS_MODE = str(input("Headless?[Yes/No]")).lower()
 
         print()
+        logging.info("Starting Twitter scraper with verbose logging.")
+        logging.debug(f"Parameters: tweets={args.tweets}, username={args.username}, hashtag={args.hashtag}, query={args.query}")
 
         tweet_type_args = []
 
@@ -154,10 +164,12 @@ def main():
 
         if len(tweet_type_args) > 1:
             print("Please specify only one of --username, --hashtag, --bookmarks, or --query.")
+            logging.error("Multiple tweet type arguments specified.")
             sys.exit(1)
 
         if args.latest and args.top:
             print("Please specify either --latest or --top. Not both.")
+            logging.error("Both latest and top flags specified.")
             sys.exit(1)
 
         if USER_UNAME is not None and USER_PASSWORD is not None:
@@ -170,7 +182,7 @@ def main():
             scraper.login()
             scraper.scrape_tweets(
                 max_tweets=args.tweets,
-                no_tweets_limit= args.no_tweets_limit if args.no_tweets_limit is not None else True,
+                no_tweets_limit=args.no_tweets_limit if args.no_tweets_limit is not None else True,
                 scrape_username=args.username,
                 scrape_hashtag=args.hashtag,
                 scrape_bookmarks=args.bookmarks,
@@ -183,15 +195,16 @@ def main():
             if not scraper.interrupted:
                 scraper.driver.close()
         else:
-            print(
-                "Missing Twitter username or password environment variables. Please check your .env file."
-            )
+            print("Missing Twitter username or password environment variables. Please check your .env file.")
+            logging.error("Missing Twitter username or password environment variables.")
             sys.exit(1)
     except KeyboardInterrupt:
         print("\nScript Interrupted by user. Exiting...")
+        logging.info("Script Interrupted by user. Exiting...")
         sys.exit(1)
     except Exception as e:
         print(f"Error: {e}")
+        logging.error(f"Error: {e}")
         sys.exit(1)
     sys.exit(1)
 

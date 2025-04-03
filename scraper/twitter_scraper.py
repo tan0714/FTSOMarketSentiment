@@ -31,6 +31,9 @@ from webdriver_manager.firefox import GeckoDriverManager
 # NEW: Import AI analysis tool for tweet deletion likelihood evaluation
 from ai_analysis import analyze_tweet
 
+import logging
+logging.basicConfig(level=logging.DEBUG, format='%(asctime)s [%(levelname)s] %(message)s')
+
 TWITTER_LOGIN_URL = "https://twitter.com/i/flow/login"
 
 
@@ -52,6 +55,7 @@ class Twitter_Scraper:
         proxy=None,
     ):
         print("Initializing Twitter Scraper...")
+        logging.info("Initializing Twitter Scraper...")
         self.mail = mail
         self.username = username
         self.password = password
@@ -97,6 +101,7 @@ class Twitter_Scraper:
         scrape_top=False,
         scrape_poster_details=False,
     ):
+        logging.debug("Configuring scraper parameters...")
         self.tweet_ids = set()
         self.data = []
         self.tweet_cards = []
@@ -105,9 +110,7 @@ class Twitter_Scraper:
         self.scraper_details = {
             "type": None,
             "username": scrape_username,
-            "hashtag": str(scrape_hashtag).replace("#", "")
-            if scrape_hashtag is not None
-            else None,
+            "hashtag": str(scrape_hashtag).replace("#", "") if scrape_hashtag is not None else None,
             "bookmarks": scrape_bookmarks,
             "query": scrape_query,
             "tab": "Latest" if scrape_latest else "Top" if scrape_top else "Latest",
@@ -131,13 +134,14 @@ class Twitter_Scraper:
         else:
             self.scraper_details["type"] = "Home"
             self.router = self.go_to_home
+        logging.debug(f"Scraper configuration: {self.scraper_details}")
         pass
 
     def _get_driver(
         self,
         proxy=None,
     ):
-        print("Setup WebDriver...")
+        logging.info("Setting up WebDriver...")
         # header = Headers().generate()["User-Agent"] 
 
         # User agent of a andoird smartphone device
@@ -167,47 +171,34 @@ class Twitter_Scraper:
             # driver = webdriver.Chrome(
             #     options=browser_option,
             # )
-
             print("Initializing FirefoxDriver...")
-            driver = webdriver.Firefox(
-                options=browser_option,
-            )
-
+            logging.info("Initializing FirefoxDriver...")
+            driver = webdriver.Firefox(options=browser_option)
             print("WebDriver Setup Complete")
+            logging.info("WebDriver Setup Complete")
             return driver
         except WebDriverException:
             try:
-                # print("Downloading ChromeDriver...")
-                # chromedriver_path = ChromeDriverManager().install()
-                # chrome_service = ChromeService(executable_path=chromedriver_path)
-
-                print("Downloading FirefoxDriver...")
+                # print("Downloading FirefoxDriver...")
+                logging.info("Downloading FirefoxDriver...")
                 firefoxdriver_path = GeckoDriverManager().install()
                 firefox_service = FirefoxService(executable_path=firefoxdriver_path)
-
-                # print("Initializing ChromeDriver...")
-                # driver = webdriver.Chrome(
-                #     service=chrome_service,
-                #     options=browser_option,
-                # )
-
-                print("Initializing FirefoxDriver...")
-                driver = webdriver.Firefox(
-                    service=firefox_service,
-                    options=browser_option,
-                )
-
+                # print("Initializing FirefoxDriver...")
+                logging.info("Initializing FirefoxDriver with downloaded driver...")
+                driver = webdriver.Firefox(service=firefox_service, options=browser_option)
                 print("WebDriver Setup Complete")
+                logging.info("WebDriver Setup Complete")
                 return driver
             except Exception as e:
                 print(f"Error setting up WebDriver: {e}")
+                logging.error(f"Error setting up WebDriver: {e}")
                 sys.exit(1)
         pass
 
     def login(self):
         print()
         print("Logging in to Twitter...")
-
+        logging.info("Logging in to Twitter...")
         try:
             self.driver.maximize_window()
             self.driver.execute_script("document.body.style.zoom='150%'") #set zoom to 150%
@@ -239,10 +230,12 @@ class Twitter_Scraper:
 
             print()
             print("Login Successful")
+            logging.info("Login Successful")
             print()
         except Exception as e:
             print()
             print(f"Login Failed: {e}")
+            logging.error(f"Login Failed: {e}")
             sys.exit(1)
 
         pass
@@ -272,10 +265,12 @@ It may be due to the following:
 - Username is incorrect
 - Twitter is experiencing unusual activity"""
                     )
+                    logging.error("Error inputting username after multiple attempts.")
                     self.driver.quit()
                     sys.exit(1)
                 else:
                     print("Re-attempting to input username...")
+                    logging.debug("Re-attempting to input username...")
                     sleep(2)
 
     def _input_unusual_activity(self):
@@ -320,10 +315,12 @@ It may be due to the following:
 - Password is incorrect
 - Twitter is experiencing unusual activity"""
                     )
+                    logging.error("Error inputting password after multiple attempts.")
                     self.driver.quit()
                     sys.exit(1)
                 else:
                     print("Re-attempting to input password...")
+                    logging.debug("Re-attempting to input password...")
                     sleep(2)
 
     def go_to_home(self):
@@ -337,6 +334,7 @@ It may be due to the following:
             or self.scraper_details["username"] == ""
         ):
             print("Username is not set.")
+            logging.error("Username is not set.")
             sys.exit(1)
         else:
             self.driver.get(f"https://twitter.com/{self.scraper_details['username']}")
@@ -349,6 +347,7 @@ It may be due to the following:
             or self.scraper_details["hashtag"] == ""
         ):
             print("Hashtag is not set.")
+            logging.error("Hashtag is not set.")
             sys.exit(1)
         else:
             url = f"https://twitter.com/hashtag/{self.scraper_details['hashtag']}?src=hashtag_click"
@@ -365,6 +364,7 @@ It may be due to the following:
             or self.scraper_details["bookmarks"] == ""
         ):
             print("Bookmarks is not set.")
+            logging.error("Bookmarks is not set.")
             sys.exit(1)
         else:
             url = f"https://twitter..com/i/bookmarks"
@@ -376,6 +376,7 @@ It may be due to the following:
     def go_to_search(self):
         if self.scraper_details["query"] is None or self.scraper_details["query"] == "":
             print("Query is not set.")
+            logging.error("Query is not set.")
             sys.exit(1)
         else:
             url = f"https://twitter.com/search?q={self.scraper_details['query']}&src=typed_query"
@@ -419,6 +420,7 @@ It may be due to the following:
         scrape_poster_details=False,
         router=None,
     ):
+        logging.info("Starting tweet scraping process...")
         self._config_scraper(
             max_tweets,
             scrape_username,
@@ -439,31 +441,38 @@ It may be due to the following:
             print(
                 "Scraping Tweets from @{}...".format(self.scraper_details["username"])
             )
+            logging.info(f"Scraping Tweets from @{self.scraper_details['username']}...")
         elif self.scraper_details["type"] == "Hashtag":
             print(
                 "Scraping {} Tweets from #{}...".format(
                     self.scraper_details["tab"], self.scraper_details["hashtag"]
                 )
             )
+            logging.info(f"Scraping {self.scraper_details['tab']} Tweets from #{self.scraper_details['hashtag']}...")
         elif self.scraper_details["type"] == "Bookmarks":
             print(
-                "Scraping Tweets from bookmarks...".format(self.scraper_details["username"]))
+                "Scraping Tweets from bookmarks...".format(self.scraper_details["username"])
+            )
+            logging.info("Scraping Tweets from bookmarks...")
         elif self.scraper_details["type"] == "Query":
             print(
                 "Scraping {} Tweets from {} search...".format(
                     self.scraper_details["tab"], self.scraper_details["query"]
                 )
             )
+            logging.info(f"Scraping {self.scraper_details['tab']} Tweets from {self.scraper_details['query']} search...")
         elif self.scraper_details["type"] == "Home":
             print("Scraping Tweets from Home...")
+            logging.info("Scraping Tweets from Home...")
 
         # Accept cookies to make the banner disappear
         try:
             accept_cookies_btn = self.driver.find_element(
-            "xpath", "//span[text()='Refuse non-essential cookies']/../../..")
+                "xpath", "//span[text()='Refuse non-essential cookies']/../../.."
+            )
             accept_cookies_btn.click()
         except NoSuchElementException:
-            pass
+            logging.debug("No cookies acceptance button found.")
 
         self.progress.print_progress(0, False, 0, no_tweets_limit)
 
@@ -493,9 +502,7 @@ It may be due to the following:
                                 card=card,
                                 driver=self.driver,
                                 actions=self.actions,
-                                scrape_poster_details=self.scraper_details[
-                                    "poster_details"
-                                ],
+                                scrape_poster_details=self.scraper_details["poster_details"],
                             )
 
                             if tweet:
@@ -503,6 +510,8 @@ It may be due to the following:
                                     if not tweet.is_ad:
                                         self.data.append(tweet.tweet)
                                         added_tweets += 1
+                                        print(f"Tweet scraped: {tweet.tweet}")
+                                        logging.debug(f"Tweet scraped: {tweet.tweet}")
                                         self.progress.print_progress(len(self.data), False, 0, no_tweets_limit)
 
                                         if len(self.data) >= self.max_tweets and not no_tweets_limit:
@@ -527,7 +536,8 @@ It may be due to the following:
                     try:
                         while retry_cnt < 15:
                             retry_button = self.driver.find_element(
-                            "xpath", "//span[text()='Retry']/../../..")
+                                "xpath", "//span[text()='Retry']/../../.."
+                            )
                             self.progress.print_progress(len(self.data), True, retry_cnt, no_tweets_limit)
                             sleep(600)
                             retry_button.click()
@@ -542,6 +552,7 @@ It may be due to the following:
                         if refresh_count >= 3:
                             print()
                             print("No more tweets to scrape")
+                            logging.info("No more tweets to scrape")
                             break
                         refresh_count += 1
                     empty_count += 1
@@ -555,33 +566,39 @@ It may be due to the following:
             except KeyboardInterrupt:
                 print("\n")
                 print("Keyboard Interrupt")
+                logging.info("Keyboard Interrupt received; stopping scraper.")
                 self.interrupted = True
                 break
             except Exception as e:
                 print("\n")
                 print(f"Error scraping tweets: {e}")
+                logging.error(f"Error scraping tweets: {e}")
                 break
 
         print("")
-
         if len(self.data) >= self.max_tweets or no_tweets_limit:
             print("Scraping Complete")
+            logging.info("Scraping Complete")
         else:
             print("Scraping Incomplete")
+            logging.info("Scraping Incomplete")
 
         if not no_tweets_limit:
             print("Tweets: {} out of {}\n".format(len(self.data), self.max_tweets))
+            logging.info(f"Tweets scraped: {len(self.data)} out of {self.max_tweets}")
 
         pass
 
     def save_to_csv(self):
         print("Saving Tweets to CSV...")
+        logging.info("Saving Tweets to CSV...")
         now = datetime.now()
         folder_path = "./tweets/"
 
         if not os.path.exists(folder_path):
             os.makedirs(folder_path)
             print("Created Folder: {}".format(folder_path))
+            logging.info("Created Folder: {}".format(folder_path))
 
         data = {
             "Name": [tweet[0] for tweet in self.data],
@@ -609,9 +626,12 @@ It may be due to the following:
         # NEW: Analyze tweets for deletion likelihood
         deletion_scores = []
         print("Analyzing tweets for deletion likelihood (this may take a while)...")
+        logging.info("Analyzing tweets for deletion likelihood (this may take a while)...")
         for tweet in self.data:
             content = tweet[4]  # Tweet text content
             score, analysis = analyze_tweet(content)
+            print(f"Tweet analysis: {analysis}")
+            logging.debug(f"Tweet analysis: {analysis}")
             deletion_scores.append(score)
         data["Deletion Likelihood"] = deletion_scores
         # End of NEW deletion likelihood analysis
@@ -624,6 +644,7 @@ It may be due to the following:
         df.to_csv(file_path, index=False, encoding="utf-8")
 
         print("CSV Saved: {}".format(file_path))
+        logging.info(f"CSV Saved: {file_path}")
 
         pass
 

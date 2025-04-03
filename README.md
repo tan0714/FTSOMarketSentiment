@@ -1,4 +1,33 @@
-# selenium-twitter-scraper
+# convrovertial tweet scraper
+
+# Future Enhancements & TODOS
+
+## Improving Consistency of Judgment
+- **Calibrate the System Prompt:**  
+  Refine the agent's prompt to include clear guidelines and examples on what constitutes controversial content.
+- **Chain-of-Thought Reasoning:**  
+  Update the prompt to require a brief reasoning summary (chain-of-thought) before providing the final controversy score.
+- **Memory Integration:**  
+  Utilize persistent memory (e.g., `ConversationBufferMemory`) to store previous analyses for consistent decisions over time.
+- **Consistency Checker Subchain:**  
+  Implement a subchain that cross-checks the deletion likelihood score with additional tools (e.g., sentiment analysis) to validate results.
+
+## Advanced LangGraph Integration
+- **Interactive Visualization:**  
+  Leverage LangGraph's visualization API to create interactive graphs of the agent’s reasoning process.
+- **Graph-Based Workflow:**  
+  Break down the tweet analysis into modular nodes (e.g., content extraction, sentiment evaluation, controversy assessment) and edges that show the data flow.
+- **Utilize Prebuilt Agents:**  
+  Integrate LangGraph prebuilt agents (such as a ReAct agent) for multi-step reasoning and tool usage.
+- **Graph Debugging Hooks:**  
+  Add logging and hooks at key decision points to generate visual summaries of the chain, aiding in debugging and improvement.
+
+## Additional TODOS
+- **Take Screenshot of Tweet:**  
+  *Take a screenshot of the tweet and add it to the output CSV or report for visual reference.*
+- **Pin Controversial Tweets:**  
+  *If the controversy score exceeds 0.5, automatically pin the tweet’s screenshot or content to IPFS and record it on Filecoin.*
+
 
 ## Setup
 
