@@ -59,7 +59,7 @@ def main():
             "-t",
             "--tweets",
             type=int,
-            default=50,
+            default=10,
             help="Number of tweets to scrape (default: 50)",
         )
 

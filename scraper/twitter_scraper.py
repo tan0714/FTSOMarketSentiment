@@ -28,6 +28,9 @@ from selenium.webdriver.support.ui import WebDriverWait
 from webdriver_manager.chrome import ChromeDriverManager
 from webdriver_manager.firefox import GeckoDriverManager
 
+# NEW: Import AI analysis tool for tweet deletion likelihood evaluation
+from ai_analysis import analyze_tweet
+
 TWITTER_LOGIN_URL = "https://twitter.com/i/flow/login"
 
 
@@ -602,6 +605,16 @@ It may be due to the following:
             data["Tweeter ID"] = [f"user_id:{tweet[15]}" for tweet in self.data]
             data["Following"] = [tweet[16] for tweet in self.data]
             data["Followers"] = [tweet[17] for tweet in self.data]
+
+        # NEW: Analyze tweets for deletion likelihood
+        deletion_scores = []
+        print("Analyzing tweets for deletion likelihood (this may take a while)...")
+        for tweet in self.data:
+            content = tweet[4]  # Tweet text content
+            score, analysis = analyze_tweet(content)
+            deletion_scores.append(score)
+        data["Deletion Likelihood"] = deletion_scores
+        # End of NEW deletion likelihood analysis
 
         df = pd.DataFrame(data)
 

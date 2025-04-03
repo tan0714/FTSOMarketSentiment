@@ -7,3 +7,4 @@ langchain>=0.0.142
 langgraph>=0.0.1
 openai>=0.27.0
 wikipedia>=1.4.0
+langchain-openai>=0.3.7
