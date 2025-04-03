@@ -1,5 +1,7 @@
 # UPDATE TO HANDLE VARIOUS REQUESTS -> CURRENTLY GENERAL SCRAPE, AND FOLLOW USER REQUESTED ACCOUNTS, BUT ALSO SCRAPE SPECIFIC ACCOUNTS TWEETS DEPENDING ON USERS REQUEST? SO MOVE TO CHATBOT LIKE FORMAT?
 
+# IF tweet = controvertial (>2) ADD TOOLS TO DEPLOY DEPENDING ON CONTENT! e.g. if Coin referenced, query coinmarketcap/coingecko/oxk api to get coin price data of mentioned coin
+
 
 # convrovertial tweet scraper
 
