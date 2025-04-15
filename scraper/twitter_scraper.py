@@ -253,7 +253,7 @@ class Twitter_Scraper:
             logging.error("Bookmarks is not set.")
             sys.exit(1)
         else:
-            url = f"https://twitter..com/i/bookmarks"
+            url = f"https://twitter.com/i/bookmarks"
             self.driver.get(url)
             sleep(3)
 
@@ -423,13 +423,26 @@ class Twitter_Scraper:
             print(f"Tweet analysis: {analysis}")
             deletion_scores.append(score)
         data["Deletion Likelihood"] = deletion_scores
-        # Build DataFrame without Emojis column
+
+        # Build DataFrame
         df = pd.DataFrame(data)
         current_time = now.strftime("%Y-%m-%d_%H-%M-%S")
         file_path = f"{folder_path}{current_time}_tweets_1-{len(self.data)}.csv"
         pd.set_option("display.max_colwidth", None)
         df.to_csv(file_path, index=False, encoding="utf-8")
         print(f"CSV Saved: {file_path}")
+
+        # --- START: Upload CSV to Filecoin using Storacha ---
+        try:
+            import store  # Ensure store.py is on your PYTHONPATH or in the same directory.
+            logging.info("Uploading CSV to Filecoin via Storacha...")
+            root, car_cid, car_path, car_size = store.generate_car(file_path)
+            cid = store.upload(root, car_cid, car_path, car_size)
+            logging.info(f"CSV Uploaded successfully. CID: {cid}")
+            print(f"CSV stored on Filecoin. CID: {cid}")
+        except Exception as e:
+            logging.error(f"Error during Filecoin upload: {e}")
+        # --- END: Upload CSV to Filecoin ---
 
     def get_tweets(self):
         return self.data
