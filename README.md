@@ -1,6 +1,12 @@
+Deploying with: 0xD577F6C41780d0D47cF644297d10A15DCeE35223
+Keeper role will be granted to: 0xD577F6C41780d0D47cF644297d10A15DCeE35223
+PricePredictorOracle deployed to: 0x431ac67aCC345d42F27e2119aC92B4f6dAd69Ed4
+
+CompositeSentimentConsumer deployed to: 0x651B654E459f02800fcb6FE8B547b6F5F12799d3 
+
 # Advanced Twitter Sentiment & Crypto Pricing Platform
 
-This project is an advanced, modular, and interoperable platform designed to harness real-time Twitter sentiment for predicting cryptocurrency price changes. By integrating a Twitter scraper with AI-driven tweet analysis, decentralized storage on Filecoin, and on-chain data provenance via smart contracts, this project delivers a state-of-the-art solution that addresses modern challenges in data integrity, ethical data sourcing, and efficient AI deployment.
+This project is an advanced, modular, and interoperable platform designed to harness real-time Twitter sentiment paired with Flare's FTSO pricing data for predicting cryptocurrency price changes. By integrating a Twitter scraper with AI-driven tweet analysis, and on-chain data provenance via smart contracts, this project delivers a state-of-the-art solution that addresses modern challenges in data integrity, ethical data sourcing, and efficient AI deployment.
 
 ---
 
