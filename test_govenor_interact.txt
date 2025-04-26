@@ -1,0 +1,17 @@
+# propose a new Twitter handle
+python test_governor_interact.py propose TestExample
+
+# cast a “for” vote on proposal #1
+python test_governor_interact.py cast 1 1
+
+# inspect proposal state
+python test_governor_interact.py state 1
+
+# see how many votes it has
+python test_governor_interact.py votes 1
+
+# once it succeeds, queue it in timelock
+python test_governor_interact.py queue 1
+
+# after the timelock delay, execute it
+python test_governor_interact.py execute 1
