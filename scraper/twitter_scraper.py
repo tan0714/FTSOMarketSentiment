@@ -432,17 +432,34 @@ class Twitter_Scraper:
         df.to_csv(file_path, index=False, encoding="utf-8")
         print(f"CSV Saved: {file_path}")
 
-        # --- START: Upload CSV to Filecoin using Storacha ---
+        # --- START: End-to-end Filecoin pipeline via StorAcha & on-chain ---
+        import store
+        logging.info("➡️ Beginning Filecoin pipeline…")
+
+        # 1) Pin to IPFS (Pinata)
+        root_cid = store.pin_to_pinata(file_path)
+
+        # 2) CAR → store/add + upload/add
+        root, car_cid, car_path, car_size = store.make_car(file_path)
+        store.upload_car(root, car_cid, car_path, car_size)
+
+        # 3) Filecoin deal
+        deal_resp = store.create_deal(root, car_cid)
         try:
-            import store  # Ensure store.py is on your PYTHONPATH or in the same directory.
-            logging.info("Uploading CSV to Filecoin via Storacha...")
-            root, car_cid, car_path, car_size = store.generate_car(file_path)
-            cid = store.upload(root, car_cid, car_path, car_size)
-            logging.info(f"CSV Uploaded successfully. CID: {cid}")
-            print(f"CSV stored on Filecoin. CID: {cid}")
-        except Exception as e:
-            logging.error(f"Error during Filecoin upload: {e}")
-        # --- END: Upload CSV to Filecoin ---
+            deal_id = deal_resp[0]["p"]["out"]["dealId"]
+        except:
+            logging.warning("⚠️ Could not parse dealId; defaulting to 0")
+            deal_id = 0
+
+        # 4) Register on-chain
+        title       = f"Twitter dump {os.path.basename(file_path)}"
+        description = f"{len(self.data)} tweets @ {datetime.now().isoformat()}"
+        price       = int(os.getenv("DATASET_PRICE_WEI", "0"))
+        preview     = df.head(2).to_json(orient="records")
+        store.register_on_chain(root_cid, car_size, deal_id, title, description, price, preview)
+
+        print(f"✅ Pipeline done: rootCID={root_cid}, deal={deal_id}")
+        # --- END pipeline ---
 
     def get_tweets(self):
         return self.data

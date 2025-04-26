@@ -47,7 +47,7 @@ The platform collects tweets using an advanced scraper, analyzes tweet content u
 - **CSV Generation & CAR Conversion:**  
   After scraping, tweets are saved into a CSV file. This CSV is then converted into a CAR file using IPFS tools.
 - **Storacha Integration:**  
-  The CAR file is uploaded to Filecoin through Storacha, ensuring that every dataset has a verifiable and immutable record.
+  The CAR file is uploaded to Filecoin through Storacha, ensuring that every dataset has a verifiable and immutable record. This is then used to interact with our contract that creates the filecoin storage deal.
 
 ### 3. Crypto Pricing Model
 - **Historical & Sentiment Data:**  
@@ -58,7 +58,14 @@ The platform collects tweets using an advanced scraper, analyzes tweet content u
 ### 4. On-Chain Data Provenance & Governance
 - **Smart Contracts:**  
   - **AIDatasetRegistry:** Registers dataset metadata (title, CID, file size, description, price, Filecoin deal ID, preview) on-chain.  
-    _Deployed at:_ `0x8fa300Faf24b9B764B0D7934D8861219Db0626e5`
+    _Deployed at:_ `0x8fa300Faf24b9B764B0D7934D8861219Db0626e5` https://calibration.filfox.info/en/address/0x8fa300Faf24b9B764B0D7934D8861219Db0626e5
+    
+Pin your file to IPFS via Pinata
+Bundle into a CAR
+Upload the CAR to StorAcha
+Kick off a Filecoin storage deal
+Call your on-chain contract
+
     
   - **DatasetAccessAgent:** Allows users to request and gain access to datasets by paying a fee, with AI agents listening to emitted events for further processing.  
     _Deployed at:_ `0xf0f994B4A8dB86A46a1eD4F12263c795b26703Ca`
@@ -125,3 +132,6 @@ Further integrate live market data feeds for enhanced trading insights.
 Refine token-based incentive mechanisms through advanced DAO models to ensure fair compensation and transparency.
 
 Some of the smart contracts have not been fully tested or fully integrated into the overall platform. With more time, we intend to build out comprehensive testing and seamless integration for these contracts. Additionally, we have collected an extensive amount of historical data and are currently working on training our own model to be used in the pricing predictor agent. These improvements will be integrated into the overall implementation to further enhance the accuracy and reliability of market predictions.
+
+**Full Dataset Availability**
+Once bot is hosted with full uptime on a cron schedule, Build Data agent that can use the data dumps to create a clean stream of up-to-date data. This then interacts with DatasetAccessAgent contract, to store the full dataset, and allow people to purchase.
