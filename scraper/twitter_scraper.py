@@ -32,6 +32,11 @@ from webdriver_manager.firefox import GeckoDriverManager
 # NEW: Import AI analysis tool for tweet deletion likelihood evaluation
 from ai_analysis import analyze_tweet
 
+# NEW: Import FTSO & price helpers
+from ftso_push import push_aggregated_score
+from ftso_price import get_price_for
+from ai_coin_identifier import identify_coin
+
 import logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(levelname)s] %(message)s')
 
@@ -409,7 +414,7 @@ class Twitter_Scraper:
             "Profile Image": [tweet[12] for tweet in self.data],
             "Tweet Link": [tweet[13] for tweet in self.data],
             "Tweet ID": [f"tweet_id:{tweet[14]}" for tweet in self.data],
-            "IPFS Screenshot": [tweet[-1] for tweet in self.data]  # Use the last element
+            "IPFS Screenshot": [tweet[-1] for tweet in self.data]
         }
         # Analyze tweets for deletion likelihood
         deletion_scores = []
@@ -460,6 +465,39 @@ class Twitter_Scraper:
 
         print(f"✅ Pipeline done: rootCID={root_cid}, deal={deal_id}")
         # --- END pipeline ---
+
+        # --- Aggregated Score → FTSO & Coin Price Logging ---
+        sample_size = len(deletion_scores)
+        avg_score   = sum(deletion_scores) / sample_size if sample_size else 0.0
+        norm_score  = int(avg_score * 100)
+        print(f"Normalized aggregated tweet deletion-likelihood score: {norm_score}")
+        tx_hash = push_aggregated_score(norm_score)
+        print(f"Pushed aggregated score {norm_score}, tx hash {tx_hash}")
+
+        # Identify coin from tweet contents
+        texts = [t[4] for t in self.data]
+        coin  = identify_coin(texts)
+        print(f"Detected coin symbol: {coin}")
+
+        # Fetch price for that coin
+        try:
+            price, ts = get_price_for(coin)
+            print(f"{coin} price: {price} @ {ts}")
+        except KeyError:
+            print(f"⚠️ {coin} not in feed; skipping price log.")
+            return
+
+        # Append to FINAL_{coin}.csv
+        import csv
+        fname = f"./FINAL_{coin}.csv"
+        row   = [ts, norm_score, price]
+        write_header = not os.path.exists(fname)
+        with open(fname, "a", newline="") as cf:
+            writer = csv.writer(cf)
+            if write_header:
+                writer.writerow(["timestamp", "score", "price"])
+            writer.writerow(row)
+        print(f"Appended to {fname}: {row}")
 
     def get_tweets(self):
         return self.data

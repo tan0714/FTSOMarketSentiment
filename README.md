@@ -1,8 +1,29 @@
+Piece	What it does	How it fits your project
+ITwitterFTSO oracle	on-chain Twitter sentiment score (0–100) from FTSO	You already scrape tweets and store them on IPFS; the FTSO gives you a decentralized, aggregated “tweetScore” you can trust in Solidity.
+IJsonApi proof	verifiable macroeconomic data (0–100) delivered as a JSON-API proof	You upload CSVs of tweet data; macro data (e.g. CPI, GDP growth) can be similarly fetched off-chain and submitted on-chain with a proof.
+CompositeSentimentConsumer	blends social (70%) + macro (30%) into one 18-dec fixed-point “composite”	Gives you a single on-chain indicator you can use to:
+Dynamically price your datasets (higher price when sentiment is bullish)
+
+Trigger governance proposals when the composite crosses thresholds
+
+Feed your “pricing agent” so it can adjust bids/offers automatically
+
+
 Deploying with: 0xD577F6C41780d0D47cF644297d10A15DCeE35223
 Keeper role will be granted to: 0xD577F6C41780d0D47cF644297d10A15DCeE35223
 PricePredictorOracle deployed to: 0x431ac67aCC345d42F27e2119aC92B4f6dAd69Ed4
 
-CompositeSentimentConsumer deployed to: 0x651B654E459f02800fcb6FE8B547b6F5F12799d3 
+CompositeSentimentConsumer deployed to: 0x6eDb539fa857f96c6B2cD4DDd1654e8D8e90d06F
+
+  deployer: 0xD577F6C41780d0D47cF644297d10A15DCeE35223
+  keeper:    0xD577F6C41780d0D47cF644297d10A15DCeE35223
+MockTwitterFTSO deployed to: 0x30E0bbC0888e691c60232843fc80514f3538645d
+
+FTSO:
+Twitter-sentiment FTSO feed
+push sentiment into FTSO
+fetch macro data & call updateComposite(...)
+read out lastComposite
 
 # Advanced Twitter Sentiment & Crypto Pricing Platform
 
