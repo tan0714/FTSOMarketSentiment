@@ -23,7 +23,6 @@ from selenium.webdriver.chrome.service import Service as ChromeService
 
 from selenium.webdriver.firefox.options import Options as FirefoxOptions
 from selenium.webdriver.firefox.service import Service as FirefoxService
-
 from selenium.webdriver.support.ui import WebDriverWait
 
 from webdriver_manager.chrome import ChromeDriverManager
@@ -114,7 +113,8 @@ class Twitter_Scraper:
 
     def _get_driver(self, proxy=None):
         logging.info("Setting up WebDriver...")
-        header = "Mozilla/5.0 (Linux; Android 11; SM-G998B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.5414.87 Mobile Safari/537.36"
+        header = "Mozilla/5.0 (Linux; Android 11; SM-G998B) AppleWebKit/537.36 " \
+                 "(KHTML, like Gecko) Chrome/109.0.5414.87 Mobile Safari/537.36"
         browser_option = FirefoxOptions()
         browser_option.add_argument("--no-sandbox")
         browser_option.add_argument("--disable-dev-shm-usage")
@@ -122,10 +122,10 @@ class Twitter_Scraper:
         browser_option.add_argument("--disable-gpu")
         browser_option.add_argument("--disable-notifications")
         browser_option.add_argument("--disable-popup-blocking")
-        browser_option.add_argument("--user-agent={}".format(header))
-        if proxy is not None:
-            browser_option.add_argument("--proxy-server=%s" % proxy)
-        if self.headlessState == 'yes':
+        browser_option.add_argument(f"--user-agent={header}")
+        if proxy:
+            browser_option.add_argument(f"--proxy-server={proxy}")
+        if self.headlessState.lower() == 'yes':
             browser_option.add_argument("--headless")
         try:
             print("Initializing FirefoxDriver...")
@@ -137,10 +137,10 @@ class Twitter_Scraper:
         except WebDriverException:
             try:
                 logging.info("Downloading FirefoxDriver...")
-                firefoxdriver_path = GeckoDriverManager().install()
-                firefox_service = FirefoxService(executable_path=firefoxdriver_path)
+                path = GeckoDriverManager().install()
+                service = FirefoxService(executable_path=path)
                 logging.info("Initializing FirefoxDriver with downloaded driver...")
-                driver = webdriver.Firefox(service=firefox_service, options=browser_option)
+                driver = webdriver.Firefox(service=service, options=browser_option)
                 print("WebDriver Setup Complete")
                 logging.info("WebDriver Setup Complete")
                 return driver
@@ -161,11 +161,7 @@ class Twitter_Scraper:
             self._input_unusual_activity()
             self._input_password()
             cookies = self.driver.get_cookies()
-            auth_token = None
-            for cookie in cookies:
-                if cookie["name"] == "auth_token":
-                    auth_token = cookie["value"]
-                    break
+            auth_token = next((c['value'] for c in cookies if c['name']=='auth_token'), None)
             if auth_token is None:
                 raise ValueError("Login failed: unstable connection, incorrect username, or incorrect password.")
             print("Login Successful")
@@ -176,56 +172,51 @@ class Twitter_Scraper:
             sys.exit(1)
 
     def _input_username(self):
-        input_attempt = 0
+        attempt = 0
         while True:
             try:
-                username = self.driver.find_element("xpath", "//input[@autocomplete='username']")
-                username.send_keys(self.username)
-                username.send_keys(Keys.RETURN)
+                inp = self.driver.find_element("xpath", "//input[@autocomplete='username']")
+                inp.send_keys(self.username, Keys.RETURN)
                 sleep(3)
-                break
+                return
             except NoSuchElementException:
-                input_attempt += 1
-                if input_attempt >= 3:
+                attempt += 1
+                if attempt >= 3:
                     print("Error inputting username after multiple attempts.")
                     logging.error("Error inputting username.")
                     self.driver.quit()
                     sys.exit(1)
-                else:
-                    sleep(2)
+                sleep(2)
 
     def _input_unusual_activity(self):
-        input_attempt = 0
+        attempt = 0
         while True:
             try:
-                unusual_activity = self.driver.find_element("xpath", "//input[@data-testid='ocfEnterTextTextInput']")
-                unusual_activity.send_keys(self.username)
-                unusual_activity.send_keys(Keys.RETURN)
+                ua = self.driver.find_element("xpath", "//input[@data-testid='ocfEnterTextTextInput']")
+                ua.send_keys(self.username, Keys.RETURN)
                 sleep(3)
-                break
+                return
             except NoSuchElementException:
-                input_attempt += 1
-                if input_attempt >= 3:
-                    break
+                attempt += 1
+                if attempt >= 3:
+                    return
 
     def _input_password(self):
-        input_attempt = 0
+        attempt = 0
         while True:
             try:
-                password = self.driver.find_element("xpath", "//input[@autocomplete='current-password']")
-                password.send_keys(self.password)
-                password.send_keys(Keys.RETURN)
+                pwd = self.driver.find_element("xpath", "//input[@autocomplete='current-password']")
+                pwd.send_keys(self.password, Keys.RETURN)
                 sleep(3)
-                break
+                return
             except NoSuchElementException:
-                input_attempt += 1
-                if input_attempt >= 3:
+                attempt += 1
+                if attempt >= 3:
                     print("Error inputting password after multiple attempts.")
                     logging.error("Error inputting password.")
                     self.driver.quit()
                     sys.exit(1)
-                else:
-                    sleep(2)
+                sleep(2)
 
     def go_to_home(self):
         self.driver.get("https://twitter.com/home")
@@ -236,54 +227,55 @@ class Twitter_Scraper:
             print("Username is not set.")
             logging.error("Username is not set.")
             sys.exit(1)
-        else:
-            self.driver.get(f"https://twitter.com/{self.scraper_details['username']}")
-            sleep(3)
+        self.driver.get(f"https://twitter.com/{self.scraper_details['username']}")
+        sleep(3)
 
     def go_to_hashtag(self):
         if not self.scraper_details["hashtag"]:
             print("Hashtag is not set.")
             logging.error("Hashtag is not set.")
             sys.exit(1)
-        else:
-            url = f"https://twitter.com/hashtag/{self.scraper_details['hashtag']}?src=hashtag_click"
-            if self.scraper_details["tab"] == "Latest":
-                url += "&f=live"
-            self.driver.get(url)
-            sleep(3)
+        url = f"https://twitter.com/hashtag/{self.scraper_details['hashtag']}?src=hashtag_click"
+        if self.scraper_details["tab"] == "Latest":
+            url += "&f=live"
+        self.driver.get(url)
+        sleep(3)
 
     def go_to_bookmarks(self):
         if not self.scraper_details["bookmarks"]:
             print("Bookmarks is not set.")
             logging.error("Bookmarks is not set.")
             sys.exit(1)
-        else:
-            url = f"https://twitter.com/i/bookmarks"
-            self.driver.get(url)
-            sleep(3)
+        self.driver.get("https://twitter.com/i/bookmarks")
+        sleep(3)
 
     def go_to_search(self):
         if not self.scraper_details["query"]:
             print("Query is not set.")
             logging.error("Query is not set.")
             sys.exit(1)
-        else:
-            url = f"https://twitter.com/search?q={self.scraper_details['query']}&src=typed_query"
-            if self.scraper_details["tab"] == "Latest":
-                url += "&f=live"
-            self.driver.get(url)
-            sleep(3)
+        url = f"https://twitter.com/search?q={self.scraper_details['query']}&src=typed_query"
+        if self.scraper_details["tab"] == "Latest":
+            url += "&f=live"
+        self.driver.get(url)
+        sleep(3)
 
     def get_tweet_cards(self):
-        self.tweet_cards = self.driver.find_elements("xpath", '//article[@data-testid="tweet" and not(@disabled)]')
+        self.tweet_cards = self.driver.find_elements(
+            "xpath", '//article[@data-testid="tweet" and not(@disabled)]'
+        )
 
     def remove_hidden_cards(self):
         try:
-            hidden_cards = self.driver.find_elements("xpath", '//article[@data-testid="tweet" and @disabled]')
-            for card in hidden_cards[1:-2]:
-                self.driver.execute_script("arguments[0].parentNode.parentNode.parentNode.remove();", card)
+            hidden = self.driver.find_elements(
+                "xpath", '//article[@data-testid="tweet" and @disabled]'
+            )
+            for card in hidden[1:-2]:
+                self.driver.execute_script(
+                    "arguments[0].parentNode.parentNode.parentNode.remove();", card
+                )
         except Exception:
-            return
+            pass
 
     def scrape_tweets(self, max_tweets=50, no_tweets_limit=False, scrape_username=None,
                       scrape_hashtag=None, scrape_bookmarks=False, scrape_query=None,
@@ -294,56 +286,54 @@ class Twitter_Scraper:
         if router is None:
             router = self.router
         router()
-        if self.scraper_details["type"] == "Username":
-            print(f"Scraping Tweets from @{self.scraper_details['username']}...")
-        elif self.scraper_details["type"] == "Hashtag":
-            print(f"Scraping {self.scraper_details['tab']} Tweets from #{self.scraper_details['hashtag']}...")
-        elif self.scraper_details["type"] == "Bookmarks":
+        d = self.scraper_details
+        if d["type"] == "Username":
+            print(f"Scraping Tweets from @{d['username']}...")
+        elif d["type"] == "Hashtag":
+            print(f"Scraping {d['tab']} Tweets from #{d['hashtag']}...")
+        elif d["type"] == "Bookmarks":
             print("Scraping Tweets from bookmarks...")
-        elif self.scraper_details["type"] == "Query":
-            print(f"Scraping {self.scraper_details['tab']} Tweets from {self.scraper_details['query']} search...")
-        elif self.scraper_details["type"] == "Home":
+        elif d["type"] == "Query":
+            print(f"Scraping {d['tab']} Tweets from {d['query']} search...")
+        else:
             print("Scraping Tweets from Home...")
 
         try:
-            accept_cookies_btn = self.driver.find_element("xpath", "//span[text()='Refuse non-essential cookies']/../../..")
-            accept_cookies_btn.click()
+            btn = self.driver.find_element(
+                "xpath", "//span[text()='Refuse non-essential cookies']/../../.."
+            )
+            btn.click()
         except NoSuchElementException:
             pass
 
         self.progress.print_progress(0, False, 0, no_tweets_limit)
-        refresh_count = 0
-        added_tweets = 0
-        empty_count = 0
-        retry_cnt = 0
+        refresh_count = added = empty = retry = 0
         while self.scroller.scrolling:
             try:
                 self.get_tweet_cards()
-                added_tweets = 0
+                added = 0
                 for card in self.tweet_cards[-15:]:
                     try:
-                        tweet_id = str(card)
-                        if tweet_id not in self.tweet_ids:
-                            self.tweet_ids.add(tweet_id)
-                            if not self.scraper_details["poster_details"]:
+                        cid = str(card)
+                        if cid not in self.tweet_ids:
+                            self.tweet_ids.add(cid)
+                            if not d["poster_details"]:
                                 self.driver.execute_script("arguments[0].scrollIntoView();", card)
-                            tweet = Tweet(card=card, driver=self.driver, actions=self.actions,
-                                          scrape_poster_details=self.scraper_details["poster_details"])
-                            if tweet and not tweet.error and tweet.tweet is not None and not tweet.is_ad:
+                            tw = Tweet(card=card, driver=self.driver,
+                                       actions=self.actions,
+                                       scrape_poster_details=d["poster_details"])
+                            if tw and not tw.error and tw.tweet and not tw.is_ad:
                                 try:
-                                    # Capture the screenshot and build the hosted URL.
-                                    ipfs_hash = screenshot_and_pin(card)
-                                    ipfs_url = f"https://gateway.pinata.cloud/ipfs/{ipfs_hash}"
+                                    ipfs = screenshot_and_pin(card)
+                                    ipfs_url = f"https://gateway.pinata.cloud/ipfs/{ipfs}"
                                     print(f"Tweet screenshot pinned to IPFS: {ipfs_url}")
                                 except Exception as e:
                                     print(f"Error pinning tweet screenshot: {e}")
                                     ipfs_url = ""
-                                # Append the hosted IPFS URL as the last element.
-                                tweet_data = list(tweet.tweet)
-                                tweet_data.append(ipfs_url)
-                                self.data.append(tuple(tweet_data))
-                                added_tweets += 1
-                                print(f"Tweet scraped: {tweet.tweet}")
+                                row = list(tw.tweet) + [ipfs_url]
+                                self.data.append(tuple(row))
+                                added += 1
+                                print(f"Tweet scraped: {tw.tweet}")
                                 self.progress.print_progress(len(self.data), False, 0, no_tweets_limit)
                                 if len(self.data) >= self.max_tweets and not no_tweets_limit:
                                     self.scroller.scrolling = False
@@ -352,28 +342,27 @@ class Twitter_Scraper:
                         continue
                 if len(self.data) >= self.max_tweets and not no_tweets_limit:
                     break
-                if added_tweets == 0:
+                if added == 0:
                     try:
-                        while retry_cnt < 15:
-                            retry_button = self.driver.find_element("xpath", "//span[text()='Retry']/../../..")
-                            self.progress.print_progress(len(self.data), True, retry_cnt, no_tweets_limit)
+                        while retry < 15:
+                            rb = self.driver.find_element("xpath", "//span[text()='Retry']/../../..")
+                            self.progress.print_progress(len(self.data), True, retry, no_tweets_limit)
                             sleep(600)
-                            retry_button.click()
-                            retry_cnt += 1
+                            rb.click()
+                            retry += 1
                             sleep(2)
                     except NoSuchElementException:
-                        retry_cnt = 0
+                        retry = 0
                         self.progress.print_progress(len(self.data), False, 0, no_tweets_limit)
-                    if empty_count >= 5:
+                    if empty >= 5:
                         if refresh_count >= 3:
                             print("\nNo more tweets to scrape")
                             break
                         refresh_count += 1
-                    empty_count += 1
+                    empty += 1
                     sleep(1)
                 else:
-                    empty_count = 0
-                    refresh_count = 0
+                    empty = refresh_count = 0
             except StaleElementReferenceException:
                 sleep(2)
                 continue
@@ -384,6 +373,7 @@ class Twitter_Scraper:
             except Exception as e:
                 print(f"\nError scraping tweets: {e}")
                 break
+
         print("")
         if len(self.data) >= self.max_tweets or no_tweets_limit:
             print("Scraping Complete")
@@ -395,109 +385,111 @@ class Twitter_Scraper:
     def save_to_csv(self):
         print("Saving Tweets to CSV...")
         now = datetime.now()
-        folder_path = "./tweets/"
-        if not os.path.exists(folder_path):
-            os.makedirs(folder_path)
-            print(f"Created Folder: {folder_path}")
+        folder = "./tweets/"
+        if not os.path.exists(folder):
+            os.makedirs(folder)
+            print(f"Created Folder: {folder}")
+
         data = {
-            "Name": [tweet[0] for tweet in self.data],
-            "Handle": [tweet[1] for tweet in self.data],
-            "Timestamp": [tweet[2] for tweet in self.data],
-            "Verified": [tweet[3] for tweet in self.data],
-            "Content": [tweet[4] for tweet in self.data],
-            "Comments": [tweet[5] for tweet in self.data],
-            "Retweets": [tweet[6] for tweet in self.data],
-            "Likes": [tweet[7] for tweet in self.data],
-            "Analytics": [tweet[8] for tweet in self.data],
-            "Tags": [tweet[9] for tweet in self.data],
-            "Mentions": [tweet[10] for tweet in self.data],
-            "Profile Image": [tweet[12] for tweet in self.data],
-            "Tweet Link": [tweet[13] for tweet in self.data],
-            "Tweet ID": [f"tweet_id:{tweet[14]}" for tweet in self.data],
-            "IPFS Screenshot": [tweet[-1] for tweet in self.data]
+            "Name": [t[0] for t in self.data],
+            "Handle": [t[1] for t in self.data],
+            "Timestamp": [t[2] for t in self.data],
+            "Verified": [t[3] for t in self.data],
+            "Content": [t[4] for t in self.data],
+            "Comments": [t[5] for t in self.data],
+            "Retweets": [t[6] for t in self.data],
+            "Likes": [t[7] for t in self.data],
+            "Analytics": [t[8] for t in self.data],
+            "Tags": [t[9] for t in self.data],
+            "Mentions": [t[10] for t in self.data],
+            "Profile Image": [t[12] for t in self.data],
+            "Tweet Link": [t[13] for t in self.data],
+            "Tweet ID": [f"tweet_id:{t[14]}" for t in self.data],
+            "IPFS Screenshot": [t[-1] for t in self.data],
         }
+
         # Analyze tweets for deletion likelihood
         deletion_scores = []
         print("Analyzing tweets for deletion likelihood (this may take a while)...")
-        for tweet in self.data:
-            content = tweet[4]
+        for t in self.data:
+            content = t[4]
             if not content.strip():
-                score, analysis = 0.0, "No content provided."
+                score = 0.0
+                analysis = "No content provided."
             else:
                 score, analysis = analyze_tweet(content)
             print(f"Tweet analysis: {analysis}")
             deletion_scores.append(score)
         data["Deletion Likelihood"] = deletion_scores
 
-        # Build DataFrame
+        # Build DataFrame & save
         df = pd.DataFrame(data)
-        current_time = now.strftime("%Y-%m-%d_%H-%M-%S")
-        file_path = f"{folder_path}{current_time}_tweets_1-{len(self.data)}.csv"
+        timestamp = now.strftime("%Y-%m-%d_%H-%M-%S")
+        path = f"{folder}{timestamp}_tweets_1-{len(self.data)}.csv"
         pd.set_option("display.max_colwidth", None)
-        df.to_csv(file_path, index=False, encoding="utf-8")
-        print(f"CSV Saved: {file_path}")
+        df.to_csv(path, index=False, encoding="utf-8")
+        print(f"CSV Saved: {path}")
 
-        # --- START: End-to-end Filecoin pipeline via StorAcha & on-chain ---
+        # --- Filecoin pipeline ---
         import store
         logging.info("➡️ Beginning Filecoin pipeline…")
-
-        # 1) Pin to IPFS (Pinata)
-        root_cid = store.pin_to_pinata(file_path)
-
-        # 2) CAR → store/add + upload/add
-        root, car_cid, car_path, car_size = store.make_car(file_path)
+        root_cid = store.pin_to_pinata(path)
+        root, car_cid, car_path, car_size = store.make_car(path)
         store.upload_car(root, car_cid, car_path, car_size)
-
-        # 3) Filecoin deal
         deal_resp = store.create_deal(root, car_cid)
         try:
             deal_id = deal_resp[0]["p"]["out"]["dealId"]
         except:
             logging.warning("⚠️ Could not parse dealId; defaulting to 0")
             deal_id = 0
-
-        # 4) Register on-chain
-        title       = f"Twitter dump {os.path.basename(file_path)}"
-        description = f"{len(self.data)} tweets @ {datetime.now().isoformat()}"
-        price       = int(os.getenv("DATASET_PRICE_WEI", "0"))
-        preview     = df.head(2).to_json(orient="records")
-        store.register_on_chain(root_cid, car_size, deal_id, title, description, price, preview)
-
+        title = f"Twitter dump {os.path.basename(path)}"
+        desc = f"{len(self.data)} tweets @ {datetime.now().isoformat()}"
+        price = int(os.getenv("DATASET_PRICE_WEI", "0"))
+        preview = df.head(2).to_json(orient="records")
+        store.register_on_chain(root_cid, car_size, deal_id, title, desc, price, preview)
         print(f"✅ Pipeline done: rootCID={root_cid}, deal={deal_id}")
-        # --- END pipeline ---
 
-        # --- Aggregated Score → FTSO & Coin Price Logging ---
-        sample_size = len(deletion_scores)
-        avg_score   = sum(deletion_scores) / sample_size if sample_size else 0.0
-        norm_score  = int(avg_score * 100)
-        print(f"Normalized aggregated tweet deletion-likelihood score: {norm_score}")
-        tx_hash = push_aggregated_score(norm_score)
-        print(f"Pushed aggregated score {norm_score}, tx hash {tx_hash}")
+        # --- Aggregated overall score → FTSO push ---
+        avg = sum(deletion_scores) / len(deletion_scores) if deletion_scores else 0.0
+        norm = int(avg * 100)
+        print(f"Normalized aggregated tweet deletion-likelihood score: {norm}")
+        tx = push_aggregated_score(norm)
+        print(f"Pushed aggregated score {norm}, tx hash {tx}")
 
-        # Identify coin from tweet contents
-        texts = [t[4] for t in self.data]
-        coin  = identify_coin(texts)
-        print(f"Detected coin symbol: {coin}")
-
-        # Fetch price for that coin
-        try:
-            price, ts = get_price_for(coin)
-            print(f"{coin} price: {price} @ {ts}")
-        except KeyError:
-            print(f"⚠️ {coin} not in feed; skipping price log.")
-            return
-
-        # Append to FINAL_{coin}.csv
+        # ------------- Multi-coin grouping & output ----------------
         import csv
-        fname = f"./FINAL_{coin}.csv"
-        row   = [ts, norm_score, price]
-        write_header = not os.path.exists(fname)
-        with open(fname, "a", newline="") as cf:
-            writer = csv.writer(cf)
-            if write_header:
-                writer.writerow(["timestamp", "score", "price"])
-            writer.writerow(row)
-        print(f"Appended to {fname}: {row}")
+        ts_run = datetime.utcnow().isoformat() + "Z"
+        pairs = list(zip(self.data, deletion_scores))
+        groups = {}
+        for td, sc in pairs:
+            coin = identify_coin([td[4]])
+            groups.setdefault(coin, []).append((td, sc))
+
+        for coin, items in groups.items():
+            # sentiment
+            scores = [s for (_td, s) in items]
+            avg_sc = sum(scores) / len(scores) if scores else 0.0
+            norm_sc = int(avg_sc * 100)
+            # price
+            try:
+                price_ftso, ts_ftso = get_price_for(coin)
+            except KeyError:
+                print(f"⚠️ {coin} not in feed; skipping")
+                continue
+            # strength = (# tweets) * (sum followers)
+            num = len(items)
+            total_followers = sum(int(td[17]) if td[17].isdigit() else 0 for (td, _s) in items)
+            strength = num * total_followers
+            # write CSV
+            fname = f"./FINAL_{coin}.csv"
+            need_hdr = not os.path.exists(fname)
+            with open(fname, "a", newline="") as cf:
+                w = csv.writer(cf)
+                if need_hdr:
+                    w.writerow(["timestamp", "score", "price", "strength"])
+                w.writerow([ts_run, norm_sc, price_ftso, strength])
+            print(f"→ Wrote {coin}: {ts_run}, {norm_sc}, {price_ftso}, {strength}")
+        # -------------------------------------------------------------
 
     def get_tweets(self):
         return self.data
