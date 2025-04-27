@@ -1,158 +1,138 @@
-Piece	What it does	How it fits your project
-ITwitterFTSO oracle	on-chain Twitter sentiment score (0–100) from FTSO	You already scrape tweets and store them on IPFS; the FTSO gives you a decentralized, aggregated “tweetScore” you can trust in Solidity.
-IJsonApi proof	verifiable macroeconomic data (0–100) delivered as a JSON-API proof	You upload CSVs of tweet data; macro data (e.g. CPI, GDP growth) can be similarly fetched off-chain and submitted on-chain with a proof.
-CompositeSentimentConsumer	blends social (70%) + macro (30%) into one 18-dec fixed-point “composite”	Gives you a single on-chain indicator you can use to:
-Dynamically price your datasets (higher price when sentiment is bullish)
+# Flare Twitter Sentiment Pricing Agent
 
-Trigger governance proposals when the composite crosses thresholds
-
-Feed your “pricing agent” so it can adjust bids/offers automatically
-
-
-Deploying with: 0xD577F6C41780d0D47cF644297d10A15DCeE35223
-Keeper role will be granted to: 0xD577F6C41780d0D47cF644297d10A15DCeE35223
-PricePredictorOracle deployed to: 0x431ac67aCC345d42F27e2119aC92B4f6dAd69Ed4
-
-CompositeSentimentConsumer deployed to: 0x6eDb539fa857f96c6B2cD4DDd1654e8D8e90d06F
-
-  deployer: 0xD577F6C41780d0D47cF644297d10A15DCeE35223
-  keeper:    0xD577F6C41780d0D47cF644297d10A15DCeE35223
-MockTwitterFTSO deployed to: 0x30E0bbC0888e691c60232843fc80514f3538645d
-
-FTSO:
-Twitter-sentiment FTSO feed
-push sentiment into FTSO
-fetch macro data & call updateComposite(...)
-read out lastComposite
-
-# Advanced Twitter Sentiment & Crypto Pricing Platform
-
-This project is an advanced, modular, and interoperable platform designed to harness real-time Twitter sentiment paired with Flare's FTSO pricing data for predicting cryptocurrency price changes. By integrating a Twitter scraper with AI-driven tweet analysis, and on-chain data provenance via smart contracts, this project delivers a state-of-the-art solution that addresses modern challenges in data integrity, ethical data sourcing, and efficient AI deployment.
+An end-to-end system that scrapes tweets, analyzes them with AI, stores your data on Filecoin, and uses Flare’s oracles to power on-chain sentiment feeds and composite indicators for crypto pricing and governance.
 
 ---
 
-## Overview
+## 🚀 Key Features
 
-The platform collects tweets using an advanced scraper, analyzes tweet content using AI agents (powered by LangChain and LangGraph), and combines the resulting sentiment data with historical crypto pricing data to predict coin price movements. The system’s output is archived as CSV files that are stored immutably on Filecoin using Storacha. On-chain smart contracts are used to record dataset metadata, ensuring transparent data provenance and fair attribution.
+1. **Twitter Scraper & AI Analysis**  
+   • Headless Selenium scraper collects tweets for any query (e.g. “Ethereum”).  
+   • AI agent (LangChain + LangGraph) computes a “deletion likelihood” score per tweet (0…1).  
+   • Deduces the relevant coin, if any, and aggregates into a normalized 0–100 sentiment score per coin.  
 
----
+2. **Decentralized Storage**  
+   • Saves each scrape as CSV, converts to CAR, pins to IPFS via Pinata.  
+   • Uses StorAcha to make a Filecoin storage deal and records metadata on-chain in `AIDatasetRegistry`.  
 
-## Key Challenges Addressed
+3. **Per-Coin FTSO Sentiment Feeds**  
+   • For each coin detected in your tweets, pushes the aggregated 0–100 score to its own MockTwitterFTSO contract.  
+   • Consumers can read `tweetScore()` on-chain in Solidity for trustless sentiment data.  
 
-- **Data Provenance:**  
-  Filecoin's immutable storage guarantees transparent lineage and verification of data authenticity. On-chain smart contracts (like AIDatasetRegistry) reinforce trust by registering dataset metadata, ensuring that the data used for AI training and market prediction remains untampered.
+4. **FTSO Price Consumer**  
+   • A single script fetches all Flare Time Series Oracle (FTSO) price feeds on Coston2.  
+   • Extracts the current price for the coin you scraped.  
 
-- **Data Sourcing & Ethics:**  
-  The scraper collects high-quality Twitter data while respecting user privacy. With decentralized storage and DAOs, the project facilitates ethical sourcing and proper incentives for authentic contributions.
+5. **Strength Metric**  
+   • Computes an “outreach strength” = (# tweets) × (sum of follower counts).  
+   • Appended alongside `timestamp, score, price` in `FINAL_{COIN}.csv`.  
 
-- **Fair Attribution:**  
-  Smart contracts and decentralized data marketplaces enable transparent and fair compensation for data creators. This is crucial in an era of AI-generated content.
-
-- **Efficient AI & Environmental Considerations:**  
-  By decentralizing data storage and using advanced AI models with consistent and explainable reasoning (chain-of-thought), our architecture minimizes computational waste and lowers the environmental impact of high-energy computations.
-
-- **Modular Architecture & Interchain Interoperability:**  
-  The system is built in a modular fashion, allowing seamless upgrades and integrations across multiple blockchain networks. This open architecture supports agentic economies where autonomous agents interact to optimize resource allocation.
-
----
-
-## System Architecture
-
-### 1. Twitter Scraper & AI Analysis
-- **Scraper Functionality:**  
-  Built using Selenium and enhanced by headless browser automation, the scraper collects tweets based on specific queries (e.g., tweets mentioning “ethereum”).  
-- **Tweet Analysis:**  
-  Each tweet is passed through an AI agent that assesses its “deletion likelihood” (a proxy for controversial sentiment) using LangChain. The analysis is refined via chain-of-thought reasoning and persistent memory techniques for consistent judgment.
-
-### 2. Decentralized Storage with Filecoin
-- **CSV Generation & CAR Conversion:**  
-  After scraping, tweets are saved into a CSV file. This CSV is then converted into a CAR file using IPFS tools.
-- **Storacha Integration:**  
-  The CAR file is uploaded to Filecoin through Storacha, ensuring that every dataset has a verifiable and immutable record. This is then used to interact with our contract that creates the filecoin storage deal.
-
-### 3. Crypto Pricing Model
-- **Historical & Sentiment Data:**  
-  The enriched tweet dataset (with sentiment scores) is combined with historical market data to feed a predictive pricing model.
-- **Prediction & Trading Insight:**  
-  The model leverages aggregated social sentiment to forecast future price movements, providing vital insights for market analysis and trading strategies.
-
-### 4. On-Chain Data Provenance & Governance
-- **Smart Contracts:**  
-  - **AIDatasetRegistry:** Registers dataset metadata (title, CID, file size, description, price, Filecoin deal ID, preview) on-chain.  
-    _Deployed at:_ `0x8fa300Faf24b9B764B0D7934D8861219Db0626e5` https://calibration.filfox.info/en/address/0x8fa300Faf24b9B764B0D7934D8861219Db0626e5
-    
-Pin your file to IPFS via Pinata
-Bundle into a CAR
-Upload the CAR to StorAcha
-Kick off a Filecoin storage deal
-Call your on-chain contract
-
-    
-  - **DatasetAccessAgent:** Allows users to request and gain access to datasets by paying a fee, with AI agents listening to emitted events for further processing.  
-    _Deployed at:_ `0xf0f994B4A8dB86A46a1eD4F12263c795b26703Ca`
-    
-  - **TruthToken:** A utility token that incentivizes data contributions and facilitates fair compensation.  
-    _Deployed at:_ `0x959e85561b3cc2E2AE9e9764f55499525E350f56`
-    
-  - **MyTimelockController:** Manages secure, time-locked transactions and operations on-chain.  
-    _Deployed at:_ `0x62FD5Ab8b5b1d11D0902Fce5B937C856301e7bf8`
-    
-  - **TruthAnchorGovernor:** Implements decentralized governance, enabling proposals (e.g., candidate Twitter handles) and voting based on collected sentiment data.  
-    _Deployed at:_ `0x5F8E67E37e223c571D184fe3CF4e27cae33E81fF`
+6. **Composite Sentiment Consumer**  
+   • Blends social sentiment (70%) + macroeconomic proof data (30%) into a fixed-point “composite” oracle.  
+   • Macro data is ingested via a verifiable JSON-API proof and submitted on-chain.  
 
 ---
 
-## Installation & Setup
+## 🎯 Flare Protocol Integration
 
-### Prerequisites
-- **Python 3.8+**
-- **Node.js & npm** (for some auxiliary tools)
-- **IPFS & ipfs-car CLI Tools** (ensure they are installed and available in your PATH)
-- A properly configured **.env** file containing:
-  ```ini
-  TWITTER_MAIL=your_twitter_mail
-  TWITTER_USERNAME=your_twitter_username
-  TWITTER_PASSWORD=your_twitter_password
-  HEADLESS=yes
-  PINATA_API_KEY=your_pinata_api_key
-  PINATA_API_SECRET=your_pinata_api_secret
-  PINATA_JWT=your_pinata_jwt
-  W3UP_SPACE_DID=your_space_did
-  W3UP_XAUTH=your_xauth
-  W3UP_AUTH=your_authorization_token
-  OPEN_AI_API_KEY=your_openai_api_key
+- **FTSO (Flare Time Series Oracle)**  
+  • You deploy per-coin MockTwitterFTSO contracts, push your tweetScore, then read it in your CompositeSentimentConsumer.  
+
+- **FTSO (Flare Time Series Oracle)**  
+  • Deploy per-coin MockTwitterFTSO contracts, push your tweetScore, then read it in your CompositeSentimentConsumer.  
+
+- **IJsonApi (JSON-API Proof)**  
+  • Wrap any external macro score (CPI, GDP growth) in an IJsonApi proof and call `updateComposite(...)` on-chain.  [deployed and tested but yet to be integrated into main flow]
+
+- **CompositeSentimentConsumer**  
+  • Deployed on Flare mainnet, reads your per-coin sentiment + macro proof, outputs one on-chain composite value.  
+  • Use it to dynamically price your datasets, trigger governance or automated trading at thresholds.   [deployed contracts but yet to be integrated into main flow]
 
 
-## Improving Consistency of Judgment
-- **Calibrate the System Prompt:**  
-  Refine the agent's prompt to include clear guidelines and examples on what constitutes controversial content.
-- **Chain-of-Thought Reasoning:**  
-  Update the prompt to require a brief reasoning summary (chain-of-thought) before providing the final controversy score.
-- **Memory Integration:**  
-  Utilize persistent memory (e.g., `ConversationBufferMemory`) to store previous analyses for consistent decisions over time.
-- **Consistency Checker Subchain:**  
-  Implement a subchain that cross-checks the deletion likelihood score with additional tools (e.g., sentiment analysis) to validate results.
+---
+# For Local Use:
 
-## Advanced LangGraph Integration
-- **Interactive Visualization:**  
-  Leverage LangGraph's visualization API to create interactive graphs of the agent’s reasoning process.
-- **Graph-Based Workflow:**  
-  Break down the tweet analysis into modular nodes (e.g., content extraction, sentiment evaluation, controversy assessment) and edges that show the data flow.
-- **Utilize Prebuilt Agents:**  
-  Integrate LangGraph prebuilt agents (such as a ReAct agent) for multi-step reasoning and tool usage.
-- **Graph Debugging Hooks:**  
-  Add logging and hooks at key decision points to generate visual summaries of the chain, aiding in debugging and improvement.
+## 🛠 Installation & Setup
 
+1. **Clone & install dependencies**  
+   ```bash
+   git clone https://github.com/yourusername/flare-twitter-pricing-agent.git
+   cd flare-twitter-pricing-agent
+   python3 -m venv venv && source venv/bin/activate
+   pip install -r requirements.txt
 
+1. **Create .env file** 
+```
+# Twitter credentials
+TWITTER_MAIL=you@example.com
+TWITTER_USERNAME=@yourhandle
+TWITTER_PASSWORD=yourpassword
+HEADLESS=yes
 
-# Future Roadmap
-**Real-Time Crypto Pricing API Integration:**
-Further integrate live market data feeds for enhanced trading insights.
+# IPFS / Filecoin (Pinata + StorAcha)
+PINATA_API_KEY=…
+PINATA_API_SECRET=…
+PINATA_JWT=…
+W3UP_SPACE_DID=…
 
-**Enhanced Data Attribution & Incentive Models:**
-Refine token-based incentive mechanisms through advanced DAO models to ensure fair compensation and transparency.
+# OpenAI
+OPEN_AI_API_KEY=…
 
-Some of the smart contracts have not been fully tested or fully integrated into the overall platform. With more time, we intend to build out comprehensive testing and seamless integration for these contracts. Additionally, we have collected an extensive amount of historical data and are currently working on training our own model to be used in the pricing predictor agent. These improvements will be integrated into the overall implementation to further enhance the accuracy and reliability of market predictions.
+# Flare RPC & keys
+FLARE_RPC_URL=https://rpc.flare.network
+FLARE_PRIVATE_KEY=…
+TWITTER_FTSO_ADDR=0x30E0bbC0888e691c60232843fc80514f3538645d
+FTSO_CONSUMER_ADDRESS=0xYourConsumerAddress
+COSTON2_RPC_URL=https://coston2.rpc.flare.network
+COMPOSITE_ADDR=0x6eDb539fa857f96c6B2cD4DDd1654e8D8e90d06F
+```
 
-**Full Dataset Availability**
-Once bot is hosted with full uptime on a cron schedule, Build Data agent that can use the data dumps to create a clean stream of up-to-date data. This then interacts with DatasetAccessAgent contract, to store the full dataset, and allow people to purchase.
+## ▶️ Usage
+Run the scraper, analyze tweets, push sentiment, fetch prices, and output per-coin CSVs:
+Example flags:
+```
+python scraper/__main__.py \
+  --query "Ethereum" \
+  --tweets 5 \
+  --headlessState yes
+```
+After completion you will see:
+  • A raw tweet CSV in ./tweets/
+  • Per-coin files FINAL_testETH.csv, FINAL_testBTC.csv, etc. containing:
+```
+timestamp,score,price,strength
+2025-04-27T02:15:00Z,42,1850.23,3500
+```
+
+## 🏗 Architecture & Flow
+### Scrape & Screenshot
+Collect tweets, capture screenshot, pin to IPFS.
+
+### AI Analysis
+LangGraph agent scores each tweet & segregates by coin.
+
+### Aggregate & Push
+Group by detected coin, compute normalized sentiment, push to FTSO.
+
+### Price Query
+Fetch current price from FTSO consumer.
+
+### Strength Calculation
+(# tweets) × (sum of followers) per coin.
+
+### Output
+Append timestamp, score, price, strength in each FINAL_{coin}.csv.
+
+### Macro Proof & Composite
+(Optional) Generate macro_proof.json, call updateComposite(...), read lastComposite.
+
+## 🔮 Future Enhancements/Additions
+  • FDC Integration for real-time macro data via Flare Data Connector.
+
+  • Multi-model Sentiment (bullish vs. bearish, topic clustering).
+
+  • Hosted Continuous Deployment, via cron or frontend trigger. - See Frontend
+
+  • DAO-Driven Governance triggers based on composite thresholds. - See Frontend
+
+  • Using Collected Data + Using Model on Historical Twitter Data Paired with Pricing Data to Train Custom Predictive Model.
