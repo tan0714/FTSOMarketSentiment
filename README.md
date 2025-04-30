@@ -38,6 +38,7 @@ An end-to-end system that scrapes tweets, analyzes them with AI, stores data on 
 - **FTSO (Flare Time Series Oracle)**  
   • Deployed per-coin MockTwitterFTSO contracts, push our tweetScore, then read it in our CompositeSentimentConsumer.  
 FTSO TweetScore Feed Contract Address: 0x30E0bbC0888e691c60232843fc80514f3538645d
+
 FTSO Price Feed Consumer Contract Address: 0x2d13826359803522cCe7a4Cfa2c1b582303DD0B4
 
 - **IJsonApi (JSON-API Proof)**  
