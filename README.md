@@ -1,6 +1,6 @@
 # Flare Twitter Sentiment Pricing Agent
 
-An end-to-end system that scrapes tweets, analyzes them with AI, stores your data on Filecoin, and uses Flare’s oracles to power on-chain sentiment feeds and composite indicators for crypto pricing and governance.
+An end-to-end system that scrapes tweets, analyzes them with AI, stores data on Filecoin, and uses Flare’s oracles to power on-chain sentiment feeds and composite indicators for crypto pricing and governance.
 
 ---
 
@@ -16,12 +16,12 @@ An end-to-end system that scrapes tweets, analyzes them with AI, stores your dat
    • Uses StorAcha to make a Filecoin storage deal and records metadata on-chain in `AIDatasetRegistry`.  
 
 3. **Per-Coin FTSO Sentiment Feeds**  
-   • For each coin detected in your tweets, pushes the aggregated 0–100 score to its own MockTwitterFTSO contract.  
+   • For each coin detected in the tweets, pushes the aggregated 0–100 score to its own MockTwitterFTSO contract.  
    • Consumers can read `tweetScore()` on-chain in Solidity for trustless sentiment data.  
 
 4. **FTSO Price Consumer**  
    • A single script fetches all Flare Time Series Oracle (FTSO) price feeds on Coston2.  
-   • Extracts the current price for the coin you scraped.  
+   • Extracts the current price for the coin scraped.  
 
 5. **Strength Metric**  
    • Computes an “outreach strength” = (# tweets) × (sum of follower counts).  
@@ -36,18 +36,23 @@ An end-to-end system that scrapes tweets, analyzes them with AI, stores your dat
 ## 🎯 Flare Protocol Integration
 
 - **FTSO (Flare Time Series Oracle)**  
-  • You deploy per-coin MockTwitterFTSO contracts, push your tweetScore, then read it in your CompositeSentimentConsumer.  
-
-- **FTSO (Flare Time Series Oracle)**  
-  • Deploy per-coin MockTwitterFTSO contracts, push your tweetScore, then read it in your CompositeSentimentConsumer.  
+  • Deployed per-coin MockTwitterFTSO contracts, push our tweetScore, then read it in our CompositeSentimentConsumer.  
+FTSO TweetScore Feed Contract Address: 0x30E0bbC0888e691c60232843fc80514f3538645d
+FTSO Price Feed Consumer Contract Address: 0x2d13826359803522cCe7a4Cfa2c1b582303DD0B4
 
 - **IJsonApi (JSON-API Proof)**  
   • Wrap any external macro score (CPI, GDP growth) in an IJsonApi proof and call `updateComposite(...)` on-chain.  [deployed and tested but yet to be integrated into main flow]
 
 - **CompositeSentimentConsumer**  
-  • Deployed on Flare mainnet, reads your per-coin sentiment + macro proof, outputs one on-chain composite value.  
-  • Use it to dynamically price your datasets, trigger governance or automated trading at thresholds.   [deployed contracts but yet to be integrated into main flow]
+  • Deployed on Flare mainnet, reads our per-coin sentiment + macro proof, outputs one on-chain composite value.  
+  • Use it to dynamically price our datasets, trigger governance or automated trading at thresholds.   [deployed contracts but yet to be integrated into main flow]
 
+
+Additional Contracts:
+DATA_STORAGE_CONTRACT_ADDR=0x8fa300Faf24b9B764B0D7934D8861219Db0626e5
+TOKEN_ADDRESS=0x959e85561b3cc2E2AE9e9764f55499525E350f56
+GOVERNOR_ADDRESS=0x5F8E67E37e223c571D184fe3CF4e27cae33E81fF
+TIMELOCK_ADDRESS=0x62FD5Ab8b5b1d11D0902Fce5B937C856301e7bf8
 
 ---
 # For Local Use:
